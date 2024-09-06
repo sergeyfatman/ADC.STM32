@@ -24,8 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "stdbool.h"
 #include "string.h"
-#include "usbd_hid.h"
-
+#include "usbd_customhid.h"
 
 #define QTY_Joysticks 2
 #define Mapping_PWM_Value_Min 800
@@ -63,6 +62,7 @@ bool Calibration_Mode = false;
 bool Begin_Change_Mode = false;
 uint32_t Button_Calibration_Time[4] = { 0, 0, 0, 0 };
 bool Button_Calibration_Status[4] = { false, false, false, false };
+uint8_t buffer[4]={0,0,0,0};
 
 /* USER CODE END PTD */
 
@@ -96,6 +96,7 @@ void Joystick_Data_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 extern USBD_HandleTypeDef hUsbDeviceFS;
+
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	if (hadc->Instance == ADC1) {
@@ -172,27 +173,34 @@ int main(void)
 	}
 
 	void Count_PWM_XY_Joystick(void) {
-		uint8_t Joystick_Number;
-		uint32_t Joystick_X, Joystick_Y;
+//		uint8_t Joystick_Number;
+//		uint32_t Joystick_X, Joystick_Y;
+//
+//		for (int index = 0; index < QTY_Joysticks; ++index) {
+//			Joystick_Number = index * 2;
+//			Joystick_X = ADC_XY_Joystick[Joystick_Number];
+//			Joystick_Y = ADC_XY_Joystick[Joystick_Number + 1];
+//
+//			if (PWM_XY_Joystick_Multiplier[index].K_X != Not_Initialized
+//					&& PWM_XY_Joystick_Multiplier[index].L_X != Not_Initialized) {
+//				PWM_XY_Joystick[index].X = Joystick_X
+//						* PWM_XY_Joystick_Multiplier[index].K_X
+//						+ PWM_XY_Joystick_Multiplier[index].L_X;
+//			}
+//			if (PWM_XY_Joystick_Multiplier[index].K_Y != Not_Initialized
+//					&& PWM_XY_Joystick_Multiplier[index].L_Y != Not_Initialized) {
+//				PWM_XY_Joystick[index].Y = Joystick_Y
+//						* PWM_XY_Joystick_Multiplier[index].K_Y
+//						+ PWM_XY_Joystick_Multiplier[index].L_Y;
+//			}
+//		}
+		buffer[0] = 0x00;  //Buttons
+		buffer[1] = 0x00;  //Buttons
+		buffer[2] = 0;       //  X Axis
+		buffer[3] = 0;       //  Y Axis
 
-		for (int index = 0; index < QTY_Joysticks; ++index) {
-			Joystick_Number = index * 2;
-			Joystick_X = ADC_XY_Joystick[Joystick_Number];
-			Joystick_Y = ADC_XY_Joystick[Joystick_Number + 1];
-
-			if (PWM_XY_Joystick_Multiplier[index].K_X != Not_Initialized
-					&& PWM_XY_Joystick_Multiplier[index].L_X != Not_Initialized) {
-				PWM_XY_Joystick[index].X = Joystick_X
-						* PWM_XY_Joystick_Multiplier[index].K_X
-						+ PWM_XY_Joystick_Multiplier[index].L_X;
-			}
-			if (PWM_XY_Joystick_Multiplier[index].K_Y != Not_Initialized
-					&& PWM_XY_Joystick_Multiplier[index].L_Y != Not_Initialized) {
-				PWM_XY_Joystick[index].Y = Joystick_Y
-						* PWM_XY_Joystick_Multiplier[index].K_Y
-						+ PWM_XY_Joystick_Multiplier[index].L_Y;
-			}
-		}
+		USBD_CUSTOM_HID_SendReport(&hUsbDeviceFS, buffer, sizeof(buffer));
+		HAL_Delay(10);
 	}
 
 	void Check_Calibration_Buttons(void) {
